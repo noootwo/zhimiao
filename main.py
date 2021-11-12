@@ -43,7 +43,7 @@ def get_customer_list():
             continue
         else:
             break
-    return result['list']
+    return list(filter(lambda x: '莲湖区' in x['cname'], result['list']))
 
 
 if __name__ == '__main__':
