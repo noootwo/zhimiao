@@ -1,17 +1,21 @@
 import requests
 
 session = None
+url = 'https://cloud.cn2030.com/sc/wx/HandlerSubscribe.ashx'
+city = ["陕西省", "西安市", ""]
+cityCode = 610100
+product = 1
 
 
 def parse_params(params):
-    result = '?'
+    url_params = '?'
     for key, value in params.items():
-        result = result + str(key) + '=' + str(value) + '&'
-    return result[:-1]
+        url_params = url_params + str(key) + '=' + str(value) + '&'
+    return url_params[:-1]
 
 
-def get(url, data):
-    global session
+def get(data):
+    global session, url
     headers = {
         "Referer": "https://servicewechat.com/wx2c7f0f3c30d99445/91/page-frame.html",
         "User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -22,34 +26,63 @@ def get(url, data):
     if not session:
         session = requests.Session()
     url = url + parse_params(data)
-    result = session.get(url, headers=headers)
+    result = None
+    # while 1:
+    #     try:
+    #         result = session.get(url, headers=headers, timeout=2)
+    #         print("text", result.text)
+    #     except:
+    #         continue
+    #     else:
+    #         # while 1:
+    #         #     try:
+    #         #         result = result.json()
+    #         #     except:
+    #         #         print(result.text)
+    #         #         continue
+    #         #     else:
+    #         #         break
+    #         result = result.json()
+    #         break
+    result = session.get(url, headers=headers, timeout=2).json()
     return result
 
 
 def get_customer_list():
-    result = None
-    url = 'https://cloud.cn2030.com/sc/wx/HandlerSubscribe.ashx'
     data = {
         "act": "CustomerList",
         "city": city,
         "cityCode": cityCode,
         "product": product
     }
+    result = get(data)
+    return list(filter(lambda x: "莲湖区" in x["cname"], result["list"]))
 
-    while 1:
-        try:
-            result = get(url, data).json()
-        except:
-            continue
-        else:
-            break
-    return list(filter(lambda x: '莲湖区' in x['cname'], result['list']))
+
+def get_customer_product(customer_id):
+    data = {
+        "act": "CustomerProduct",
+        "id": customer_id
+    }
+    product_list = get(data)["list"]
+    result = list(filter(lambda x: "九价" in x["text"], product_list))
+    return result["BtnLable"] != "暂未开始"
+
+
+def get_customer_subscribe_date_all():
+    for customer_item in customer_list:
+        data = {
+            "act": "GetCustSubscribeDateAll",
+            "pid": product,
+            "id": customer_item["id"],
+            "month": "202112"
+        }
+        print(1)
+        date_list = get(data)["list"]
+        print("date", date_list)
 
 
 if __name__ == '__main__':
-    city = ["陕西省", "西安市", ""]
-    cityCode = 610100
-    product = 1
-
     customer_list = get_customer_list()
-    print(customer_list)
+    # customer_product = get_customer_product()
+    get_customer_subscribe_date_all()
